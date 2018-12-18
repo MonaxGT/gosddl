@@ -1,29 +1,25 @@
 FROM golang:alpine AS build-env
-LABEL maintainer "Alexander Makhinov <monaxgt@gmail.com>"
+LABEL maintainer "Alexander Makhinov <monaxgt@gmail.com>" \
+      repository="https://github.com/MonaxGT/gosddl"
 
-ENV CGO_ENABLED 0
-
-COPY gosddl.go /go/src/gosddl/gosddl.go
-
-WORKDIR /go/src/gosddl
+COPY . /go/src/github.com/MonaxGT/gosddl
 
 RUN apk add --no-cache git mercurial \
-    && go get github.com/gorilla/mux/... \
-    && go build -o gosddl
-
-FROM alpine:edge
-
+    && cd /go/src/github.com/MonaxGT/gosddl/service/gosddl \
+    && go get -t . \
+    && CGO_ENABLED=0 go build -ldflags="-s -w" \
+                              -a \
+                              -installsuffix static \
+                              -o /gosddl
 RUN adduser -D app
 
-COPY --from=build-env /go/src/gosddl/gosddl /app/gosddl
+FROM scratch
 
-RUN chmod +x /app/gosddl \
-  && chown -R app /app
+COPY --from=build-env /gosddl /app/gosddl
+COPY --from=build-env /etc/passwd /etc/passwd
 
 USER app
 
 WORKDIR /app
 
-EXPOSE 8000
-
-ENTRYPOINT ["/app/gosddl"]
+ENTRYPOINT ["./gosddl"]
