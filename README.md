@@ -2,6 +2,7 @@ GoSDDL (Security Descriptor Definition Language)
 ===============================================
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/70d6bf54dd2547d894ee7ba7a9247285)](https://app.codacy.com/app/MonaxGT/gosddl?utm_source=github.com&utm_medium=referral&utm_content=MonaxGT/gosddl&utm_campaign=Badge_Grade_Dashboard)
+[![Maintainability](https://api.codeclimate.com/v1/badges/69e05e119408b9f830d4/maintainability)](https://codeclimate.com/github/MonaxGT/gosddl/maintainability)
 
 Converter from SDDL-string to user-friendly JSON. SDDL consist of four part: Owner, Primary Group, DACL, SACL.
 
