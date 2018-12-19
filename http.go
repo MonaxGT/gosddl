@@ -10,11 +10,11 @@ import (
 
 var permisson Permissons
 
-func GetInfo(w http.ResponseWriter, r *http.Request) {
+func getInfo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("Hello")
 }
 
-func Decode(w http.ResponseWriter, r *http.Request) {
+func decode(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if params["sddl"] != "" {
 		sddl := params["sddl"]
@@ -26,7 +26,7 @@ func Decode(w http.ResponseWriter, r *http.Request) {
 
 func HttpHandler(port string) {
 	router := mux.NewRouter()
-	router.HandleFunc("/sddl", GetInfo).Methods("GET")
-	router.HandleFunc("/sddl/{sddl}", Decode).Methods("GET")
+	router.HandleFunc("/sddl", getInfo).Methods("GET")
+	router.HandleFunc("/sddl/{sddl}", decode).Methods("GET")
 	log.Fatal(http.ListenAndServe(port, router))
 }
