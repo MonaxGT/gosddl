@@ -7,12 +7,12 @@ import (
 )
 
 type entryACLInternal struct {
-	AccountSid        string   `json:"accountsid"`
+	AccountSid        string   `json:"accountSID"`
 	AceType           string   `json:"aceType"`
-	AceFlags          []string `json:"aceflags"`
+	AceFlags          []string `json:"aceFlags"`
 	Rights            []string `json:"rights"`
-	ObjectGuid        string   `json:"objectguid"`
-	InheritObjectGuid string   `json:"InheritObjectGuid"`
+	ObjectGUID        string   `json:"objectGUID"`
+	InheritObjectGUID string   `json:"inheritObjectGUID"`
 }
 
 type Permissons struct {
@@ -33,12 +33,11 @@ func sidReplace(str string) string {
 			return str
 		}
 		return replacer(sddlWellKnownSidsRep, str)[0]
-	} else {
-		return replacer(sddlSidsRep, str)[0]
 	}
+	return replacer(sddlSidsRep, str)[0]
 }
 
-// Chunk string with 2 letters, add to array and then resolve
+// chunk string with 2 letters, add to array and then resolve
 func replacer(maps map[string]string, str string) []string {
 	var temp, result []string
 	if len(str) > 2 {
@@ -66,8 +65,8 @@ func splitBodyACL(str string) entryACLInternal {
 		AceType:           replacer(sddlAceType, temp[0])[0],
 		AceFlags:          replacer(sddlAceFlags, temp[1]),
 		Rights:            replacer(sddlRights, temp[2]),
-		ObjectGuid:        temp[3],
-		InheritObjectGuid: temp[4],
+		ObjectGUID:        temp[3],
+		InheritObjectGUID: temp[4],
 		AccountSid:        sidReplace(temp[5]),
 	}
 }
