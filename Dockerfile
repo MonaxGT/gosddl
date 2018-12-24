@@ -20,6 +20,8 @@ COPY --from=build-env /etc/passwd /etc/passwd
 
 USER app
 
-WORKDIR /app
+VOLUME /app/data
 
-ENTRYPOINT ["./gosddl"]
+WORKDIR /app/data
+
+ENTRYPOINT ["../gosddl"]
