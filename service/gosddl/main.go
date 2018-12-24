@@ -1,28 +1,15 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
-	"fmt"
-	"log"
 
 	"github.com/MonaxGT/gosddl"
 )
 
 func main() {
-	var permisson gosddl.Permissons
-	apiPtr := flag.Bool("api", false, "a bool")
+	apiPtr := flag.Bool("api", false, "Use API mode")
 	apiPortPtr := flag.String("port", ":8000", "Default port 8000")
+	fileSIDs := flag.String("f", "", "File with users's SIDs")
 	flag.Parse()
-	if *apiPtr {
-		fmt.Println("API Interface started on port", *apiPortPtr)
-		gosddl.HttpHandler(*apiPortPtr)
-	} else if flag.Args() != nil {
-		permisson.FindGroupIndex(flag.Args()[0])
-		b, err := json.Marshal(permisson)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(string(b))
-	}
+	gosddl.Processor(*apiPtr, *apiPortPtr, *fileSIDs)
 }

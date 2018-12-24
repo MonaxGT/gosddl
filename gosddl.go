@@ -1,44 +1,76 @@
 package gosddl
 
 import (
+	"bufio"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
+
+	"encoding/json"
 )
 
-type entryACLInternal struct {
-	AccountSid        string   `json:"accountSID"`
-	AceType           string   `json:"aceType"`
-	AceFlags          []string `json:"aceFlags"`
-	Rights            []string `json:"rights"`
-	ObjectGUID        string   `json:"objectGUID"`
-	InheritObjectGUID string   `json:"inheritObjectGUID"`
+// ACLProcessor main struct with methods
+type ACLProcessor struct {
+	Rights Permissons
+	File   string
+}
+
+type entryACL struct {
+	AccountSid        string   `json:"accountSID,omitempty"`
+	AceType           string   `json:"aceType,omitempty"`
+	AceFlags          []string `json:"aceFlags,omitempty"`
+	Rights            []string `json:"rights,omitempty"`
+	ObjectGUID        string   `json:"objectGUID,omitempty"`
+	InheritObjectGUID string   `json:"inheritObjectGUID,omitempty"`
 }
 
 type Permissons struct {
-	Owner     string             `json:"owner"`
-	Primary   string             `json:"primary"`
-	Dacl      []entryACLInternal `json:"dacl"`
-	DaclInher []string           `json:"daclInheritFlags"`
-	Sacl      []entryACLInternal `json:"sacl"`
-	SaclInger []string           `json:"saclInheritFlags"`
+	Owner     string     `json:"owner,omitempty"`
+	Primary   string     `json:"primary,omitempty"`
+	Dacl      []entryACL `json:"dacl,omitempty"`
+	DaclInher []string   `json:"daclInheritFlags,omitempty"`
+	Sacl      []entryACL `json:"sacl,omitempty"`
+	SaclInger []string   `json:"saclInheritFlags,omitempty"`
 }
 
-// replace identification account: sid/wellkhownsid/usersid
-func sidReplace(str string) string {
+// checkSIDsFile check file of SIDs where data saved in SID,User
+func checkSIDsFile(filePath string, sid string) string {
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		if strings.Split(scanner.Text(), ",")[0] == sid {
+			return strings.Split(scanner.Text(), ",")[1]
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return sid
+}
+
+// sidReplace replace identification account: sid/wellkhownsid/usersid
+func (app *ACLProcessor) sidReplace(str string) string {
 	if len(str) > 2 {
+
 		if x, ok := sddlWellKnownSidsRep[str]; ok {
 			return x
-		} else {
-			return str
+		} else if app.File != "" {
+			return checkSIDsFile(app.File, str)
 		}
-		return replacer(sddlWellKnownSidsRep, str)[0]
+		return str
 	}
-	return replacer(sddlSidsRep, str)[0]
+	return app.replacer(sddlSidsRep, str)[0]
 }
 
-// chunk string with 2 letters, add to array and then resolve
-func replacer(maps map[string]string, str string) []string {
+// replacer chunk string with 2 letters, add to array and then resolve
+func (app *ACLProcessor) replacer(maps map[string]string, str string) []string {
 	var temp, result []string
 	if len(str) > 2 {
 		for j := 0; j < len(str)-1; j = j + 2 {
@@ -57,63 +89,64 @@ func replacer(maps map[string]string, str string) []string {
 	return result
 }
 
-// Base format ACL: (ace_type;ace_flags;rights;object_guid;inherit_object_guid;account_sid)
-// Convert values from string to struct with replace strings
-func splitBodyACL(str string) entryACLInternal {
-	temp := strings.Split(str, ";")
-	return entryACLInternal{
-		AceType:           replacer(sddlAceType, temp[0])[0],
-		AceFlags:          replacer(sddlAceFlags, temp[1]),
-		Rights:            replacer(sddlRights, temp[2]),
-		ObjectGUID:        temp[3],
-		InheritObjectGUID: temp[4],
-		AccountSid:        sidReplace(temp[5]),
+/* splitBodyACL Convert values from string to struct with replace strings
+Base format Rights: (ace_type;ace_flags;rights;object_guid;inherit_object_guid;account_sid)
+*/
+func (app *ACLProcessor) splitBodyACL(str string) entryACL {
+	splitACL := strings.Split(str, ";")
+	return entryACL{
+		AceType:           app.replacer(sddlAceType, splitACL[0])[0],
+		AceFlags:          app.replacer(sddlAceFlags, splitACL[1]),
+		Rights:            app.replacer(sddlRights, splitACL[2]),
+		ObjectGUID:        splitACL[3],
+		InheritObjectGUID: splitACL[4],
+		AccountSid:        app.sidReplace(splitACL[5]),
 	}
 }
 
-func splitBody(body string) []entryACLInternal {
-	var entryACLInternalArr []entryACLInternal
+func (app *ACLProcessor) splitBody(body string) []entryACL {
+	var entryACLInternalArr []entryACL
 	for _, y := range strings.Split(body, "(") {
 		if y != "" {
 			ace := strings.TrimSuffix(y, ")")
-			entryACLInternalArr = append(entryACLInternalArr, splitBodyACL(ace))
+			entryACLInternalArr = append(entryACLInternalArr, app.splitBodyACL(ace))
 		}
 	}
 	return entryACLInternalArr
 }
 
-func (p *Permissons) parseBody(body string) ([]string, []entryACLInternal) {
+func (app *ACLProcessor) parseBody(body string) ([]string, []entryACL) {
 	var inheritFlagArr []string
-	var entryACLInternalArr []entryACLInternal
+	var entryACLInternalArr []entryACL
 	if strings.Index(body, "(") != 0 {
 		inheritFlag := body[0:strings.Index(body, "(")]
 		ace := body[strings.Index(body, "("):]
 		if len(inheritFlag) > 2 {
 			for j := 0; j < len(inheritFlag)-1; j = j + 2 {
-				inheritFlagArr = append(inheritFlagArr, replacer(sddlInheritanceFlags, fmt.Sprintf("%s%s", string(inheritFlag[j]), string(inheritFlag[j+1])))[0])
+				inheritFlagArr = append(inheritFlagArr, app.replacer(sddlInheritanceFlags, fmt.Sprintf("%s%s", string(inheritFlag[j]), string(inheritFlag[j+1])))[0])
 			}
 		}
-		entryACLInternalArr = splitBody(ace)
+		entryACLInternalArr = app.splitBody(ace)
 	} else {
-		entryACLInternalArr = splitBody(body)
+		entryACLInternalArr = app.splitBody(body)
 	}
 	return inheritFlagArr, entryACLInternalArr
 }
 
-func (p *Permissons) parseSDDL(sddrArr []string) {
+func (app *ACLProcessor) parseSDDL(sddrArr []string) {
 	for _, y := range sddrArr {
 		sddlSplit := strings.Split(y, ":")
 		letter := sddlSplit[0]
 		body := sddlSplit[1]
 		switch letter {
 		case "O":
-			p.Owner = sidReplace(body)
+			app.Rights.Owner = app.sidReplace(body)
 		case "G":
-			p.Primary = sidReplace(body)
+			app.Rights.Primary = app.sidReplace(body)
 		case "D":
-			p.DaclInher, p.Dacl = p.parseBody(body)
+			app.Rights.DaclInher, app.Rights.Dacl = app.parseBody(body)
 		case "S":
-			p.SaclInger, p.Sacl = p.parseBody(body)
+			app.Rights.SaclInger, app.Rights.Sacl = app.parseBody(body)
 		default:
 			log.Fatal("Unresolved group")
 		}
@@ -121,17 +154,18 @@ func (p *Permissons) parseSDDL(sddrArr []string) {
 
 }
 
-// create slice objects from str to array of strings
-func (p *Permissons) sliceSDDL(indecs []int, str string) {
+// slice SDDL create slice objects from str to array of strings
+func (app *ACLProcessor) sliceSDDL(indecs []int, str string) {
 	var sddlArr []string
 	for i := 0; i < len(indecs)-1; i++ {
 		sl := str[indecs[i]:indecs[i+1]]
 		sddlArr = append(sddlArr, sl)
 	}
-	p.parseSDDL(sddlArr)
+	app.parseSDDL(sddlArr)
 }
 
-func (p *Permissons) FindGroupIndex(str string) {
+// FindGroupIndex used for find index of group Owner, Primary, DACL, SACL
+func (app *ACLProcessor) findGroupIndex(str string) {
 	groups := []string{"O:", "G:", "D:", "S:"}
 	var result []int
 	for _, i := range groups {
@@ -140,5 +174,24 @@ func (p *Permissons) FindGroupIndex(str string) {
 		}
 	}
 	result = append(result, len(str))
-	p.sliceSDDL(result, str)
+	app.sliceSDDL(result, str)
+}
+
+// Processor main function in gosddl package
+func Processor(api bool, port string, file string) {
+	var app ACLProcessor
+	app.File = file
+	if api {
+		fmt.Println("API Interface started on port", port)
+		app.httpHandler(port)
+	} else if flag.Args() != nil {
+		app.findGroupIndex(flag.Args()[0])
+		body, err := json.Marshal(app.Rights)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(body))
+	} else {
+		log.Fatal("You should give me SDDL string or use API mode")
+	}
 }
