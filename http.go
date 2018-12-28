@@ -16,8 +16,12 @@ func (app *ACLProcessor) decode(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	if params["sddl"] != "" {
 		sddl := params["sddl"]
-		app.findGroupIndex(sddl)
+		err := app.findGroupIndex(sddl)
+		if err != nil {
+			log.Println("Wrong SDDL string")
+		}
 		json.NewEncoder(w).Encode(app.Rights)
+		app.Rights = permissons{}
 		return
 	}
 }
