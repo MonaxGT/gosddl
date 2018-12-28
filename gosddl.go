@@ -9,11 +9,12 @@ import (
 	"strings"
 
 	"encoding/json"
+	"github.com/pkg/errors"
 )
 
 // ACLProcessor main struct with methods
 type ACLProcessor struct {
-	Rights Permissons
+	Rights permissons
 	File   string
 }
 
@@ -26,7 +27,7 @@ type entryACL struct {
 	InheritObjectGUID string   `json:"inheritObjectGUID,omitempty"`
 }
 
-type Permissons struct {
+type permissons struct {
 	Owner     string     `json:"owner,omitempty"`
 	Primary   string     `json:"primary,omitempty"`
 	Dacl      []entryACL `json:"dacl,omitempty"`
@@ -165,7 +166,7 @@ func (app *ACLProcessor) sliceSDDL(indecs []int, str string) {
 }
 
 // FindGroupIndex used for find index of group Owner, Primary, DACL, SACL
-func (app *ACLProcessor) findGroupIndex(str string) {
+func (app *ACLProcessor) findGroupIndex(str string) error {
 	groups := []string{"O:", "G:", "D:", "S:"}
 	var result []int
 	for _, i := range groups {
@@ -173,25 +174,34 @@ func (app *ACLProcessor) findGroupIndex(str string) {
 			result = append(result, strings.Index(str, i))
 		}
 	}
+	if result == nil {
+		return errors.New("Can't find any group")
+	}
 	result = append(result, len(str))
 	app.sliceSDDL(result, str)
+	return nil
 }
 
 // Processor main function in gosddl package
-func Processor(api bool, port string, file string) {
+func Processor(api bool, port string, file string) error {
 	var app ACLProcessor
 	app.File = file
 	if api {
 		fmt.Println("API Interface started on port", port)
 		app.httpHandler(port)
 	} else if flag.Args() != nil {
-		app.findGroupIndex(flag.Args()[0])
+		err := app.findGroupIndex(flag.Args()[0])
+		if err != nil {
+			return err
+		}
 		body, err := json.Marshal(app.Rights)
 		if err != nil {
 			log.Fatal(err)
+			return err
 		}
 		fmt.Println(string(body))
-	} else {
-		log.Fatal("You should give me SDDL string or use API mode")
+		return nil
 	}
+	log.Fatal("You should give me SDDL string or use API mode")
+	return nil
 }
