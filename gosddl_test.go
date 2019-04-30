@@ -44,14 +44,16 @@ func TestSidReplace(t *testing.T) {
 	err := ioutil.WriteFile("test.txt", data, 0644)
 	if err != nil {
 		t.Error("can't write data test.txt", err)
-	}
-	str := checkSIDsFile("test.txt","S-10-10")
-	if str == "User" {
 		return
 	}
+	str := checkSIDsFile("test.txt","S-10-10")
 	err = os.Remove("test.txt")
 	if err != nil {
 		t.Error("can't delete file", err)
+		return
+	}
+	if str == "User" {
+		return
 	}
 	t.Errorf("replaced name doesn't match result: %s",str)
 }
