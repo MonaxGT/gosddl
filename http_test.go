@@ -24,4 +24,3 @@ func TestGetInfo(t *testing.T) {
 			rr.Body.String(), expected)
 	}
 }
-

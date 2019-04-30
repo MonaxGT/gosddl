@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 
-	"github.com/MonaxGT/gosddl"
 	"fmt"
+	"github.com/MonaxGT/gosddl"
 )
 
 func main() {

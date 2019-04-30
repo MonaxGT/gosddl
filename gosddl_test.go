@@ -27,7 +27,6 @@ func TestFindGroupIndex(t *testing.T) {
 	}
 }
 
-
 func TestFindGroupIndex2(t *testing.T) {
 	var app ACLProcessor
 	testStr := "{O:WA,G:SA,D:(SA;DA;;;;DA),S:AI(SA;DA;;;;ST)}"
@@ -38,7 +37,6 @@ func TestFindGroupIndex2(t *testing.T) {
 	}
 }
 
-
 func TestSidReplace(t *testing.T) {
 	data := []byte("S-10-10,User\n")
 	err := ioutil.WriteFile("test.txt", data, 0644)
@@ -46,7 +44,7 @@ func TestSidReplace(t *testing.T) {
 		t.Error("can't write data test.txt", err)
 		return
 	}
-	str := checkSIDsFile("test.txt","S-10-10")
+	str := checkSIDsFile("test.txt", "S-10-10")
 	err = os.Remove("test.txt")
 	if err != nil {
 		t.Error("can't delete file", err)
@@ -55,7 +53,7 @@ func TestSidReplace(t *testing.T) {
 	if str == "User" {
 		return
 	}
-	t.Errorf("replaced name doesn't match result: %s",str)
+	t.Errorf("replaced name doesn't match result: %s", str)
 }
 
 func TestReplacer(t *testing.T) {
@@ -65,7 +63,7 @@ func TestReplacer(t *testing.T) {
 	if str == "Network" {
 		return
 	}
-	t.Errorf("replaced name doesn't match result: %s",str)
+	t.Errorf("replaced name doesn't match result: %s", str)
 }
 
 func TestSplitBodyACL(t *testing.T) {

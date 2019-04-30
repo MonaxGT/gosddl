@@ -21,11 +21,12 @@ func (app *ACLProcessor) decode(w http.ResponseWriter, r *http.Request) {
 			log.Println("Wrong SDDL string")
 		}
 		json.NewEncoder(w).Encode(app.Rights)
-		app.Rights = permissons{}
+		app.Rights = permissions{}
 		return
 	}
 }
 
+// HTTPHandler start http serve
 func (app *ACLProcessor) HTTPHandler(port string) {
 	router := mux.NewRouter()
 	router.HandleFunc("/sddl", getInfo).Methods("GET")

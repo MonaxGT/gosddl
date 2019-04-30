@@ -13,7 +13,7 @@ import (
 
 // ACLProcessor main struct with methods
 type ACLProcessor struct {
-	Rights permissons
+	Rights permissions
 	File   string
 }
 
@@ -26,7 +26,7 @@ type entryACL struct {
 	InheritObjectGUID string   `json:"inheritObjectGUID,omitempty"`
 }
 
-type permissons struct {
+type permissions struct {
 	Owner     string     `json:"owner,omitempty"`
 	Primary   string     `json:"primary,omitempty"`
 	Dacl      []entryACL `json:"dacl,omitempty"`
@@ -181,15 +181,15 @@ func (app *ACLProcessor) findGroupIndex(str string) error {
 
 // Processor main function in gosddl package
 func (app *ACLProcessor) Processor(str string) error {
-		err := app.findGroupIndex(str)
-		if err != nil {
-			return err
-		}
-		body, err := json.Marshal(app.Rights)
-		if err != nil {
-			log.Fatal(err)
-			return err
-		}
-		fmt.Println(string(body))
-		return nil
+	err := app.findGroupIndex(str)
+	if err != nil {
+		return err
 	}
+	body, err := json.Marshal(app.Rights)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	fmt.Println(string(body))
+	return nil
+}
