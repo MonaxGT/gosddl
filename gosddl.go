@@ -59,7 +59,6 @@ func checkSIDsFile(filePath string, sid string) string {
 // sidReplace replace identification account: sid/wellkhownsid/usersid
 func (app *ACLProcessor) sidReplace(str string) string {
 	if len(str) > 2 {
-
 		if x, ok := sddlWellKnownSidsRep[str]; ok {
 			return x
 		} else if app.File != "" {
