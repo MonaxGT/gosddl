@@ -2,7 +2,6 @@ package gosddl
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -151,7 +150,6 @@ func (app *ACLProcessor) parseSDDL(sddrArr []string) {
 			log.Fatal("Unresolved group")
 		}
 	}
-
 }
 
 // slice SDDL create slice objects from str to array of strings
@@ -182,14 +180,8 @@ func (app *ACLProcessor) findGroupIndex(str string) error {
 }
 
 // Processor main function in gosddl package
-func Processor(api bool, port string, file string) error {
-	var app ACLProcessor
-	app.File = file
-	if api {
-		fmt.Println("API Interface started on port", port)
-		app.httpHandler(port)
-	} else if flag.Args() != nil {
-		err := app.findGroupIndex(flag.Args()[0])
+func (app *ACLProcessor) Processor(str string) error {
+		err := app.findGroupIndex(str)
 		if err != nil {
 			return err
 		}
@@ -201,6 +193,3 @@ func Processor(api bool, port string, file string) error {
 		fmt.Println(string(body))
 		return nil
 	}
-	log.Fatal("You should give me SDDL string or use API mode")
-	return nil
-}

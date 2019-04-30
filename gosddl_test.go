@@ -8,25 +8,13 @@ import (
 )
 
 func TestProcessor(t *testing.T) {
-	quit := make (chan bool)
-	go func (){
-		api := true
-		url := ":8123"
-		for {
-			select {
-			case <- quit:
-				return
-			default:
-				err := Processor(api,url,"")
-				if err != nil {
-					t.Error("cant't run function Processor: ",err)
-				}
-			}
-
-		}
-		close(quit)
-	}()
-	quit <- true
+	var app ACLProcessor
+	testStr := "{O:WA,G:SA}"
+	err := app.Processor(testStr)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 }
 
 func TestFindGroupIndex(t *testing.T) {
@@ -38,6 +26,18 @@ func TestFindGroupIndex(t *testing.T) {
 		return
 	}
 }
+
+
+func TestFindGroupIndex2(t *testing.T) {
+	var app ACLProcessor
+	testStr := "{O:WA,G:SA,D:(SA;DA;;;;DA),S:AI(SA;DA;;;;ST)}"
+	err := app.findGroupIndex(testStr)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
 
 func TestSidReplace(t *testing.T) {
 	data := []byte("S-10-10,User\n")
@@ -64,4 +64,14 @@ func TestReplacer(t *testing.T) {
 		return
 	}
 	t.Errorf("replaced name doesn't match result: %s",str)
+}
+
+func TestSplitBodyACL(t *testing.T) {
+	var app ACLProcessor
+	testStr := "SA;DA;;;;ST"
+	result := app.splitBodyACL(testStr)
+	if result.AccountSid == "" {
+		t.Error("function return nil data")
+		return
+	}
 }

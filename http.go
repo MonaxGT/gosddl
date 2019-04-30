@@ -26,7 +26,7 @@ func (app *ACLProcessor) decode(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *ACLProcessor) httpHandler(port string) {
+func (app *ACLProcessor) HTTPHandler(port string) {
 	router := mux.NewRouter()
 	router.HandleFunc("/sddl", getInfo).Methods("GET")
 	router.HandleFunc("/sddl/{sddl}", app.decode).Methods("GET")
